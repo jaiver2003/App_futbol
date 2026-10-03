@@ -1,0 +1,186 @@
+[{
+  "_id": {
+    "$oid": "6aa31dc2a102e716b002b461"
+  },
+  "nombre": "jaiver  pepe",
+  "apellido": "muñoz muñoz",
+  "edad": 23,
+  "posicion": "Mediocampista",
+  "numeroCamiseta": 15,
+  "telefono": "3145435665",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-10T21:14:42.522Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-11T20:38:07.720Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa32453a102e716b002b463"
+  },
+  "nombre": "ana sofia",
+  "apellido": "muñoz bernal",
+  "edad": 11,
+  "posicion": "Delantero",
+  "numeroCamiseta": 27,
+  "telefono": "3107442924",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-10T21:42:43.408Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-11T21:12:53.563Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa466d3d3d656741e12d510"
+  },
+  "nombre": "jhojan ",
+  "apellido": "ausecha",
+  "edad": 15,
+  "posicion": "Mediocampista",
+  "numeroCamiseta": 17,
+  "telefono": "3245877996",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-11T20:38:43.339Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-11T20:38:43.339Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa478b2870246797912449b"
+  },
+  "nombre": "jaiver",
+  "apellido": "lopez",
+  "edad": 30,
+  "posicion": "Portero",
+  "numeroCamiseta": 4,
+  "telefono": "3145435665",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-11T21:54:58.493Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-11T22:06:13.142Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa478cb870246797912449c"
+  },
+  "nombre": "federico ",
+  "apellido": "valverde ",
+  "edad": 34,
+  "posicion": "Mediocampista",
+  "numeroCamiseta": 23,
+  "telefono": "3145435665",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-11T21:55:23.580Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-11T21:55:23.580Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa47dc587024679791244a0"
+  },
+  "nombre": "diego ",
+  "apellido": "prado ",
+  "edad": 34,
+  "posicion": "Defensa",
+  "numeroCamiseta": 5,
+  "telefono": "3145435665",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-11T22:16:37.769Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-11T22:16:55.380Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa49943f7e4c32418c10642"
+  },
+  "nombre": "Carlos",
+  "apellido": "García",
+  "edad": 22,
+  "posicion": "Delantero",
+  "numeroCamiseta": 9,
+  "telefono": "3001234567",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6aa4995df7e4c32418c10644"
+  },
+  "nombre": "Luis",
+  "apellido": "Martínez",
+  "edad": 25,
+  "posicion": "Portero",
+  "numeroCamiseta": 1,
+  "telefono": "3009876543",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6aa4999df7e4c32418c10649"
+  },
+  "nombre": "Andrés",
+  "apellido": "Pérez",
+  "edad": 21,
+  "posicion": "Mediocampista",
+  "numeroCamiseta": 8,
+  "telefono": "3007778888",
+  "estado": "activo",
+  "createdAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6aa499ccf7e4c32418c1064b"
+  },
+  "nombre": "Miguel",
+  "apellido": "Torres",
+  "edad": 23,
+  "posicion": "Defensa",
+  "numeroCamiseta": 14,
+  "telefono": "3002223333",
+  "estado": "inactivo",
+  "createdAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-01T00:00:00.000Z"
+  }
+}]

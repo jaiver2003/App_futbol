@@ -1,0 +1,66 @@
+[{
+  "_id": {
+    "$oid": "6aa4976f87024679791244a2"
+  },
+  "jugadorId": {
+    "$oid": "6aa31dc2a102e716b002b461"
+  },
+  "mes": "Agosto",
+  "anio": 2026,
+  "valor": 70000,
+  "estado": "pagado",
+  "fechaPago": {
+    "$date": "2026-09-12T00:06:07.809Z"
+  },
+  "createdAt": {
+    "$date": "2026-09-12T00:06:07.823Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-12T00:06:07.823Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa4978a87024679791244a3"
+  },
+  "jugadorId": {
+    "$oid": "6aa32453a102e716b002b463"
+  },
+  "mes": "Agosto",
+  "anio": 2026,
+  "valor": 30000,
+  "estado": "pagado",
+  "fechaPago": {
+    "$date": "2026-09-12T00:06:34.602Z"
+  },
+  "createdAt": {
+    "$date": "2026-09-12T00:06:34.610Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-12T00:06:34.610Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6aa4983e87024679791244a4"
+  },
+  "jugadorId": {
+    "$oid": "6aa466d3d3d656741e12d510"
+  },
+  "mes": "Julio",
+  "anio": 2026,
+  "valor": 70000,
+  "estado": "pendiente",
+  "fechaPago": {
+    "$date": "2026-09-12T00:09:34.568Z"
+  },
+  "createdAt": {
+    "$date": "2026-09-12T00:09:34.575Z"
+  },
+  "updatedAt": {
+    "$date": "2026-09-12T00:09:34.575Z"
+  },
+  "__v": 0
+}]
