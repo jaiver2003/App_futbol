@@ -11,13 +11,20 @@ export interface IJugador extends Document {
 }
 
 const JugadorSchema = new Schema<IJugador>({
-  nombre:         { type: String, required: true },
-  apellido:       { type: String, required: true },
-  edad:           { type: Number, required: true },
-  posicion:       { type: String, enum: ['Portero','Defensa','Mediocampista','Delantero'], required: true },
-  numeroCamiseta: { type: Number, required: true, unique: true },
-  telefono:       { type: String, required: true },
-  estado:         { type: String, enum: ['activo','inactivo'], default: 'activo' }
+  nombre:   { type: String, required: [true, 'El nombre es obligatorio'], trim: true },
+  apellido: { type: String, required: [true, 'El apellido es obligatorio'], trim: true },
+  edad:     { type: Number, required: [true, 'La edad es obligatoria'], min: [4, 'Edad mínima 4'], max: [60, 'Edad máxima 60'] },
+  posicion: {
+    type: String,
+    enum: { values: ['Portero', 'Defensa', 'Mediocampista', 'Delantero'], message: 'Posición inválida' },
+    required: [true, 'La posición es obligatoria']
+  },
+  numeroCamiseta: {
+    type: Number, required: [true, 'El número de camiseta es obligatorio'],
+    unique: true, min: [1, 'Camiseta mínima 1'], max: [99, 'Camiseta máxima 99']
+  },
+  telefono: { type: String, required: [true, 'El teléfono es obligatorio'], trim: true },
+  estado:   { type: String, enum: ['activo', 'inactivo'], default: 'activo' }
 }, { timestamps: true });
 
 export default mongoose.model<IJugador>('Jugador', JugadorSchema);
