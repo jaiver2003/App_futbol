@@ -72,12 +72,21 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato inválido' });
-    const jugador = await Jugador.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
+
+    const { nombre, apellido, edad, posicion, numeroCamiseta, telefono, estado } = req.body;
+    const cambios: Record<string, any> = { nombre, apellido, posicion, telefono };
+    if (edad !== undefined && edad !== '') cambios.edad = Number(edad);
+    if (numeroCamiseta !== undefined && numeroCamiseta !== '') cambios.numeroCamiseta = Number(numeroCamiseta);
+    if (estado) cambios.estado = String(estado).toLowerCase();
+
+    // quita los campos que no llegaron
+    Object.keys(cambios).forEach(k => cambios[k] === undefined && delete cambios[k]);
+
+    const jugador = await Jugador.findByIdAndUpdate(req.params.id, cambios, { new: true, runValidators: true });
     if (!jugador) return res.status(404).json({ mensaje: 'Jugador no encontrado' });
     res.status(200).json(jugador);
   } catch (err) { manejarError(res, err); }
 });
-
 // 5. Inactivar jugador (baja lógica)
 router.patch('/:id/inactivar', async (req: Request, res: Response) => {
   try {

@@ -53,13 +53,15 @@ function App() {
   const cargarJugadores = () => {
     fetch('http://localhost:3001/api/jugadores')
       .then(res => res.json())
-      .then(data => setJugadores(data))
+      .then(data => setJugadores(Array.isArray(data) ? data : []))
+      .catch(console.error)
   }
 
   const cargarMensualidades = () => {
     fetch('http://localhost:3001/api/mensualidades')
       .then(res => res.json())
-      .then(data => setMensualidades(data))
+      .then(data => setMensualidades(Array.isArray(data) ? data : []))
+      .catch(console.error)
   }
 
   useEffect(() => {
@@ -77,11 +79,17 @@ function App() {
       ? `http://localhost:3001/api/jugadores/${editandoId}`
       : 'http://localhost:3001/api/jugadores'
     const method = editandoId ? 'PUT' : 'POST'
-    await fetch(url, {
+    const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, edad: Number(form.edad), numeroCamiseta: Number(form.numeroCamiseta) })
     })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      const detalle = err.errores?.map((e: any) => `${e.campo}: ${e.mensaje}`).join('\n') || err.mensaje || 'Error al guardar'
+      alert(`❌ ${detalle}`)
+      return
+    }
     cargarJugadores()
     setMostrarFormulario(false)
     setEditandoId(null)
@@ -94,11 +102,17 @@ function App() {
       return
     }
     setErrorValor('')
-    await fetch('http://localhost:3001/api/mensualidades', {
+    const res = await fetch('http://localhost:3001/api/mensualidades', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...formPago, valor: Number(formPago.valor), fechaPago: new Date() })
     })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      const detalle = err.errores?.map((e: any) => `${e.campo}: ${e.mensaje}`).join('\n') || err.mensaje || 'Error al registrar el pago'
+      alert(`❌ ${detalle}`)
+      return
+    }
     cargarMensualidades()
     setMostrarFormPago(false)
     setFormPago({ jugadorId: '', mes: 'Enero', anio: 2026, valor: 30000, estado: 'pagado' })
@@ -112,8 +126,14 @@ function App() {
 
   const eliminarJugador = async (id: string) => {
     if (!confirm('¿Seguro que quieres eliminar este jugador?')) return
-    await fetch(`http://localhost:3001/api/jugadores/${id}`, { method: 'DELETE' })
+    const res = await fetch(`http://localhost:3001/api/jugadores/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      alert(`❌ ${err.mensaje || 'No se pudo eliminar'}`)
+      return
+    }
     cargarJugadores()
+    cargarMensualidades()
   }
 
   const cancelar = () => {
@@ -151,7 +171,7 @@ function App() {
               <div key={m._id} className="flex items-center gap-2 bg-red-100 px-3 py-1 rounded-full">
                 <span className="text-red-700 text-sm">{m.jugadorId?.nombre} {m.jugadorId?.apellido} — {diasDesde(m.createdAt!)} días</span>
                 <button
-                  onClick={() => enviarWhatsApp(m.jugadorId.telefono, m.jugadorId.nombre, diasDesde(m.createdAt!))}
+                  onClick={() => enviarWhatsApp(m.jugadorId?.telefono, m.jugadorId?.nombre, diasDesde(m.createdAt!))}
                   className="text-green-600 hover:text-green-800 text-xs font-medium"
                 >
                   💬 Cobrar
