@@ -10,6 +10,8 @@ export default function Header() {
           <NavLink to="/jugadores">Jugadores</NavLink>
           <NavLink to="/crear">Nuevo</NavLink>
           <NavLink to="/mensualidades">Mensualidades</NavLink>
+          <NavLink to="/categorias">Categorías</NavLink>
+          <NavLink to="/entrenadores">Entrenadores</NavLink>
         </nav>
       </div>
     </header>

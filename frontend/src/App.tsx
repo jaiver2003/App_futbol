@@ -5,6 +5,8 @@ import Jugadores from './pages/Jugadores'
 import CrearJugador from './pages/CrearJugador'
 import EditarJugador from './pages/EditarJugador'
 import Mensualidades from './pages/Mensualidades'
+import Categorias from './pages/Categorias'
+import Entrenadores from './pages/Entrenadores'
 import './styles/global.css'
 
 export default function App() {
@@ -17,6 +19,8 @@ export default function App() {
         <Route path="/crear" element={<CrearJugador />} />
         <Route path="/editar/:id" element={<EditarJugador />} />
         <Route path="/mensualidades" element={<Mensualidades />} />
+        <Route path="/categorias" element={<Categorias />} />
+        <Route path="/entrenadores" element={<Entrenadores />} />
         <Route path="*" element={<Jugadores />} />
       </Routes>
     </BrowserRouter>
