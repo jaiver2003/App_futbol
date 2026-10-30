@@ -12,6 +12,8 @@ export default function Header() {
           <NavLink to="/mensualidades">Mensualidades</NavLink>
           <NavLink to="/categorias">Categorías</NavLink>
           <NavLink to="/entrenadores">Entrenadores</NavLink>
+          <NavLink to="/partidos">Partidos</NavLink>
+          <NavLink to="/asistencias">Asistencia</NavLink>
         </nav>
       </div>
     </header>

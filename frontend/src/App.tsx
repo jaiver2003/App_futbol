@@ -7,6 +7,8 @@ import EditarJugador from './pages/EditarJugador'
 import Mensualidades from './pages/Mensualidades'
 import Categorias from './pages/Categorias'
 import Entrenadores from './pages/Entrenadores'
+import Partidos from './pages/Partidos'
+import Asistencias from './pages/Asistencias'
 import './styles/global.css'
 
 export default function App() {
@@ -21,6 +23,8 @@ export default function App() {
         <Route path="/mensualidades" element={<Mensualidades />} />
         <Route path="/categorias" element={<Categorias />} />
         <Route path="/entrenadores" element={<Entrenadores />} />
+        <Route path="/partidos" element={<Partidos />} />
+        <Route path="/asistencias" element={<Asistencias />} />
         <Route path="*" element={<Jugadores />} />
       </Routes>
     </BrowserRouter>
