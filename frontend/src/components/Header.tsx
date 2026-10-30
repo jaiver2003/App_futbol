@@ -5,7 +5,7 @@ export default function Header() {
     <header>
       <div className="container header-content">
         <h2 style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: 0 }}>
-          <img src="/logo.png" alt="Logo Club Deportivo Academia Dorada" style={{ height: '64px' }} />
+          <img src="/logo%20academia%20dorada.png" alt="Logo Club Deportivo Academia Dorada" style={{ height: '64px' }} />
           Academia Dorada
         </h2>
         <nav>
