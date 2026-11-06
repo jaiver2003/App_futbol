@@ -4,6 +4,7 @@ import {
   obtenerAsistencias,
   obtenerHistorialJugador,
   crearAsistencia,
+  actualizarAsistencia,
   eliminarAsistencia,
 } from '../api/asistencias'
 import { obtenerJugadores } from '../api/jugadores'
@@ -25,6 +26,11 @@ function nombreJugador(a: Asistencia): string {
   return 'Jugador'
 }
 
+function idJugador(a: Asistencia): string {
+  if (!a.jugadorId) return ''
+  return typeof a.jugadorId === 'object' ? a.jugadorId._id : a.jugadorId
+}
+
 export default function Asistencias() {
   const [asistencias, setAsistencias] = useState<Asistencia[]>([])
   const [jugadores, setJugadores] = useState<Jugador[]>([])
@@ -32,6 +38,7 @@ export default function Asistencias() {
   const [error, setError] = useState('')
   const [jugadorHistorial, setJugadorHistorial] = useState('')
   const [historial, setHistorial] = useState<HistorialAsistencia | null>(null)
+  const [editandoId, setEditandoId] = useState<string | null>(null)
 
   const cargar = async () => {
     try {
@@ -61,17 +68,41 @@ export default function Asistencias() {
     }
   }
 
+  const cancelar = () => {
+    setForm(formVacio)
+    setEditandoId(null)
+    setError('')
+  }
+
+  const editar = (a: Asistencia) => {
+    setForm({
+      jugadorId: idJugador(a),
+      fecha: a.fecha.slice(0, 10),
+      presente: a.presente ? 'true' : 'false',
+      observacion: a.observacion ?? '',
+    })
+    setEditandoId(a._id)
+    setError('')
+  }
+
   const guardar = async (e: FormEvent) => {
     e.preventDefault()
     try {
-      await crearAsistencia({
-        jugadorId: form.jugadorId,
-        fecha: form.fecha,
-        presente: form.presente === 'true',
-        observacion: form.observacion || undefined,
-      })
-      setForm(formVacio)
-      setError('')
+      if (editandoId) {
+        await actualizarAsistencia(editandoId, {
+          fecha: form.fecha,
+          presente: form.presente === 'true',
+          observacion: form.observacion,
+        })
+      } else {
+        await crearAsistencia({
+          jugadorId: form.jugadorId,
+          fecha: form.fecha,
+          presente: form.presente === 'true',
+          observacion: form.observacion || undefined,
+        })
+      }
+      cancelar()
       await cargar()
       if (jugadorHistorial) verHistorial(jugadorHistorial)
     } catch (err) {
@@ -83,6 +114,7 @@ export default function Asistencias() {
     if (!window.confirm('¿Eliminar este registro?')) return
     try {
       await eliminarAsistencia(id)
+      if (editandoId === id) cancelar()
       await cargar()
       if (jugadorHistorial) verHistorial(jugadorHistorial)
     } catch (err) {
@@ -93,11 +125,12 @@ export default function Asistencias() {
   return (
     <div className="container">
       <h1>Asistencia</h1>
-      {error && <p>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <form onSubmit={guardar}>
         <select value={form.jugadorId}
-          onChange={(e) => setForm({ ...form, jugadorId: e.target.value })} required>
+          onChange={(e) => setForm({ ...form, jugadorId: e.target.value })}
+          required disabled={!!editandoId}>
           <option value="">Elige jugador</option>
           {jugadores.map((j) => (
             <option key={j._id} value={j._id}>
@@ -114,7 +147,8 @@ export default function Asistencias() {
         </select>
         <input placeholder="Observación (opcional)" maxLength={200} value={form.observacion}
           onChange={(e) => setForm({ ...form, observacion: e.target.value })} />
-        <button type="submit">Registrar</button>
+        <button type="submit">{editandoId ? 'Guardar cambios' : 'Registrar'}</button>
+        {editandoId && <button type="button" onClick={cancelar}>Cancelar</button>}
       </form>
 
       <h2>Historial por jugador</h2>
@@ -143,6 +177,7 @@ export default function Asistencias() {
           <li key={a._id}>
             {a.fecha.slice(0, 10)} · {nombreJugador(a)} · {a.presente ? 'Presente' : 'Ausente'}
             {a.observacion && ` · ${a.observacion}`}{' '}
+            <button onClick={() => editar(a)}>Editar</button>{' '}
             <button onClick={() => borrar(a._id)}>Eliminar</button>
           </li>
         ))}

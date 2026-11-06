@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { obtenerMensualidades, crearMensualidad } from '../api/mensualidades'
+import {
+  obtenerMensualidades,
+  crearMensualidad,
+  actualizarMensualidad,
+  eliminarMensualidad,
+} from '../api/mensualidades'
 import { obtenerJugadores } from '../api/jugadores'
 import { mensajeDeError } from '../api/errores'
 import type { Jugador, Mensualidad, MensualidadInput } from '../types'
@@ -28,6 +33,7 @@ export default function Mensualidades() {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [formPago, setFormPago] = useState<MensualidadInput>(pagoVacio)
   const [errorValor, setErrorValor] = useState('')
+  const [editandoId, setEditandoId] = useState<string | null>(null)
 
   const cargar = () => {
     obtenerMensualidades().then((res) => setMensualidades(res.data)).catch(console.error)
@@ -47,6 +53,36 @@ export default function Mensualidades() {
     }
   }
 
+  const cerrarForm = () => {
+    setMostrarForm(false)
+    setEditandoId(null)
+    setFormPago(pagoVacio)
+    setErrorValor('')
+  }
+
+  const handleEditar = (m: Mensualidad) => {
+    setFormPago({
+      jugadorId: m.jugadorId?._id ?? '',
+      mes: m.mes,
+      anio: m.anio,
+      valor: m.valor,
+      estado: m.estado,
+    })
+    setEditandoId(m._id)
+    setErrorValor('')
+    setMostrarForm(true)
+  }
+
+  const handleEliminar = async (id: string) => {
+    if (!window.confirm('¿Seguro que quieres eliminar esta mensualidad?')) return
+    try {
+      await eliminarMensualidad(id)
+      setMensualidades(mensualidades.filter((m) => m._id !== id))
+    } catch (err) {
+      alert(`❌ ${mensajeDeError(err, 'Error al eliminar la mensualidad')}`)
+    }
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (formPago.valor > VALOR_MAXIMO) {
@@ -54,13 +90,20 @@ export default function Mensualidades() {
       return
     }
     try {
-      await crearMensualidad(formPago)
+      if (editandoId) {
+        await actualizarMensualidad(editandoId, {
+          mes: formPago.mes,
+          anio: formPago.anio,
+          valor: formPago.valor,
+          estado: formPago.estado,
+        })
+      } else {
+        await crearMensualidad(formPago)
+      }
       cargar()
-      setMostrarForm(false)
-      setFormPago(pagoVacio)
-      setErrorValor('')
+      cerrarForm()
     } catch (err) {
-      alert(`❌ ${mensajeDeError(err, 'Error al registrar el pago')}`)
+      alert(`❌ ${mensajeDeError(err, 'Error al guardar el pago')}`)
     }
   }
 
@@ -106,18 +149,31 @@ export default function Mensualidades() {
         <div style={tarjeta}><p>Total recaudado</p><h2>${totalRecaudado.toLocaleString()}</h2></div>
       </div>
 
-      <button onClick={() => setMostrarForm(!mostrarForm)} style={{ marginBottom: '15px' }}>
+      <button
+        onClick={() => (mostrarForm ? cerrarForm() : setMostrarForm(true))}
+        style={{ marginBottom: '15px' }}
+      >
         {mostrarForm ? 'Cancelar' : '+ Registrar pago'}
       </button>
 
       {mostrarForm && (
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '10px', marginBottom: '20px', ...tarjeta }}>
+          <h3 style={{ margin: 0 }}>{editandoId ? 'Editar pago' : 'Registrar pago'}</h3>
+
           <label>Jugador:</label>
-          <select name="jugadorId" value={formPago.jugadorId} onChange={handleChange} required>
+          <select
+            name="jugadorId"
+            value={formPago.jugadorId}
+            onChange={handleChange}
+            required
+            disabled={!!editandoId}
+          >
             <option value="">Selecciona jugador</option>
-            {jugadores.filter((j) => j.estado === 'activo').map((j) => (
-              <option key={j._id} value={j._id}>{j.nombre} {j.apellido}</option>
-            ))}
+            {jugadores
+              .filter((j) => j.estado === 'activo' || j._id === formPago.jugadorId)
+              .map((j) => (
+                <option key={j._id} value={j._id}>{j.nombre} {j.apellido}</option>
+              ))}
           </select>
 
           <label>Mes:</label>
@@ -139,7 +195,7 @@ export default function Mensualidades() {
             <option value="parcial">Parcial</option>
           </select>
 
-          <button type="submit">Guardar pago</button>
+          <button type="submit">{editandoId ? 'Guardar cambios' : 'Guardar pago'}</button>
         </form>
       )}
 
@@ -166,14 +222,20 @@ export default function Mensualidades() {
                   <td>{m.estado}</td>
                   <td>{m.estado !== 'pagado' ? `${vencida ? '🔴 ' : ''}${dias} días` : '✅ Al día'}</td>
                   <td>
-                    {m.estado !== 'pagado' && m.jugadorId && (
-                      <button
-                        style={{ backgroundColor: '#25d366' }}
-                        onClick={() => enviarWhatsApp(m.jugadorId.telefono, m.jugadorId.nombre, dias)}
-                      >
-                        💬 Cobrar
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {m.estado !== 'pagado' && m.jugadorId && (
+                        <button
+                          style={{ backgroundColor: '#25d366' }}
+                          onClick={() => enviarWhatsApp(m.jugadorId.telefono, m.jugadorId.nombre, dias)}
+                        >
+                          💬 Cobrar
+                        </button>
+                      )}
+                      <button onClick={() => handleEditar(m)}>Editar</button>
+                      <button style={{ backgroundColor: 'red' }} onClick={() => handleEliminar(m._id)}>
+                        Eliminar
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               )

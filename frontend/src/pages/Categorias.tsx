@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { obtenerCategorias, crearCategoria, eliminarCategoria } from '../api/categorias'
+import {
+  obtenerCategorias,
+  crearCategoria,
+  actualizarCategoria,
+  eliminarCategoria,
+} from '../api/categorias'
 import type { Categoria } from '../types'
 
 const formVacio = { nombre: '', edadMin: '', edadMax: '', horario: '' }
@@ -16,6 +21,7 @@ export default function Categorias() {
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [form, setForm] = useState(formVacio)
   const [error, setError] = useState('')
+  const [editandoId, setEditandoId] = useState<string | null>(null)
 
   const cargar = async () => {
     try {
@@ -30,17 +36,38 @@ export default function Categorias() {
     cargar()
   }, [])
 
+  const cancelar = () => {
+    setForm(formVacio)
+    setEditandoId(null)
+    setError('')
+  }
+
+  const editar = (c: Categoria) => {
+    setForm({
+      nombre: c.nombre,
+      edadMin: String(c.edadMin),
+      edadMax: String(c.edadMax),
+      horario: c.horario,
+    })
+    setEditandoId(c._id)
+    setError('')
+  }
+
   const guardar = async (e: FormEvent) => {
     e.preventDefault()
+    const datos = {
+      nombre: form.nombre,
+      edadMin: Number(form.edadMin),
+      edadMax: Number(form.edadMax),
+      horario: form.horario,
+    }
     try {
-      await crearCategoria({
-        nombre: form.nombre,
-        edadMin: Number(form.edadMin),
-        edadMax: Number(form.edadMax),
-        horario: form.horario,
-      })
-      setForm(formVacio)
-      setError('')
+      if (editandoId) {
+        await actualizarCategoria(editandoId, datos)
+      } else {
+        await crearCategoria(datos)
+      }
+      cancelar()
       cargar()
     } catch (err) {
       setError(mensajeError(err))
@@ -51,6 +78,7 @@ export default function Categorias() {
     if (!window.confirm('¿Eliminar esta categoría?')) return
     try {
       await eliminarCategoria(id)
+      if (editandoId === id) cancelar()
       cargar()
     } catch (err) {
       setError(mensajeError(err))
@@ -60,7 +88,7 @@ export default function Categorias() {
   return (
     <div>
       <h1>Categorías</h1>
-      {error && <p>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <form onSubmit={guardar}>
         <input placeholder="Nombre" value={form.nombre}
@@ -71,13 +99,15 @@ export default function Categorias() {
           onChange={(e) => setForm({ ...form, edadMax: e.target.value })} required />
         <input placeholder="Horario (ej. Lunes 4pm)" value={form.horario}
           onChange={(e) => setForm({ ...form, horario: e.target.value })} required />
-        <button type="submit">Crear categoría</button>
+        <button type="submit">{editandoId ? 'Guardar cambios' : 'Crear categoría'}</button>
+        {editandoId && <button type="button" onClick={cancelar}>Cancelar</button>}
       </form>
 
       <ul>
         {categorias.map((c) => (
           <li key={c._id}>
             {c.nombre} · {c.edadMin}-{c.edadMax} años · {c.horario}{' '}
+            <button onClick={() => editar(c)}>Editar</button>{' '}
             <button onClick={() => borrar(c._id)}>Eliminar</button>
           </li>
         ))}

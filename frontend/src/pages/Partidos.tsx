@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { obtenerPartidos, crearPartido, eliminarPartido } from '../api/partidos'
+import {
+  obtenerPartidos,
+  crearPartido,
+  actualizarPartido,
+  eliminarPartido,
+} from '../api/partidos'
 import { obtenerCategorias } from '../api/categorias'
 import type { Partido, Categoria } from '../types'
 
@@ -28,11 +33,17 @@ function nombreCategoria(p: Partido): string {
   return 'Sin categoría'
 }
 
+function idCategoria(p: Partido): string {
+  if (!p.categoriaId) return ''
+  return typeof p.categoriaId === 'object' ? p.categoriaId._id : p.categoriaId
+}
+
 export default function Partidos() {
   const [partidos, setPartidos] = useState<Partido[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [form, setForm] = useState(formVacio)
   const [error, setError] = useState('')
+  const [editandoId, setEditandoId] = useState<string | null>(null)
 
   const cargar = async () => {
     try {
@@ -48,11 +59,31 @@ export default function Partidos() {
     cargar()
   }, [])
 
+  const cancelar = () => {
+    setForm(formVacio)
+    setEditandoId(null)
+    setError('')
+  }
+
+  const editar = (p: Partido) => {
+    setForm({
+      fecha: p.fecha.slice(0, 10),
+      rival: p.rival,
+      lugar: p.lugar,
+      categoriaId: idCategoria(p),
+      estado: p.estado,
+      golesFavor: p.golesFavor !== undefined && p.golesFavor !== null ? String(p.golesFavor) : '',
+      golesContra: p.golesContra !== undefined && p.golesContra !== null ? String(p.golesContra) : '',
+    })
+    setEditandoId(p._id)
+    setError('')
+  }
+
   const guardar = async (e: FormEvent) => {
     e.preventDefault()
     try {
       const esJugado = form.estado === 'jugado'
-      await crearPartido({
+      const datos = {
         fecha: form.fecha,
         rival: form.rival,
         lugar: form.lugar,
@@ -60,9 +91,13 @@ export default function Partidos() {
         estado: form.estado,
         golesFavor: esJugado ? Number(form.golesFavor) : undefined,
         golesContra: esJugado ? Number(form.golesContra) : undefined,
-      })
-      setForm(formVacio)
-      setError('')
+      }
+      if (editandoId) {
+        await actualizarPartido(editandoId, datos)
+      } else {
+        await crearPartido(datos)
+      }
+      cancelar()
       cargar()
     } catch (err) {
       setError(mensajeError(err))
@@ -73,6 +108,7 @@ export default function Partidos() {
     if (!window.confirm('¿Eliminar este partido?')) return
     try {
       await eliminarPartido(id)
+      if (editandoId === id) cancelar()
       cargar()
     } catch (err) {
       setError(mensajeError(err))
@@ -82,7 +118,7 @@ export default function Partidos() {
   return (
     <div className="container">
       <h1>Partidos</h1>
-      {error && <p>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <form onSubmit={guardar}>
         <input type="date" value={form.fecha}
@@ -112,7 +148,8 @@ export default function Partidos() {
               onChange={(e) => setForm({ ...form, golesContra: e.target.value })} required />
           </>
         )}
-        <button type="submit">Crear partido</button>
+        <button type="submit">{editandoId ? 'Guardar cambios' : 'Crear partido'}</button>
+        {editandoId && <button type="button" onClick={cancelar}>Cancelar</button>}
       </form>
 
       <ul>
@@ -120,6 +157,7 @@ export default function Partidos() {
           <li key={p._id}>
             {p.fecha.slice(0, 10)} · vs {p.rival} · {p.lugar} · {nombreCategoria(p)} · {p.estado}
             {p.estado === 'jugado' && ` · ${p.golesFavor} - ${p.golesContra}`}{' '}
+            <button onClick={() => editar(p)}>Editar</button>{' '}
             <button onClick={() => borrar(p._id)}>Eliminar</button>
           </li>
         ))}
