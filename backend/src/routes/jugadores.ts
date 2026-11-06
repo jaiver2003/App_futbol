@@ -19,7 +19,7 @@ function manejarError(res: Response, err: any) {
   return res.status(500).json({ mensaje: 'Error interno del servidor' });
 }
 
-const idInvalido = (id: string) => !mongoose.isValidObjectId(id);
+const idInvalido = (id: unknown) => !mongoose.isValidObjectId(id);
 
 // 1. Registrar jugador
 router.post('/', async (req: Request, res: Response) => {

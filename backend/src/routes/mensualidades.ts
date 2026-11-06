@@ -136,4 +136,49 @@ router.get('/resumen', async (req: Request, res: Response) => {
   } catch (err) { manejarError(res, err); }
 });
 
+// Actualizar mensualidad (el jugador no se cambia)
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      res.status(400).json({ mensaje: 'ID con formato inválido' });
+      return;
+    }
+    const { mes, anio, valor, estado, fechaPago } = req.body;
+    const cambios: any = {};
+    if (mes !== undefined) cambios.mes = normalizarMes(mes);
+    if (anio !== undefined) cambios.anio = anio;
+    if (valor !== undefined) cambios.valor = valor;
+    if (estado !== undefined) cambios.estado = estado;
+    if (estado === 'pagado') cambios.fechaPago = fechaPago || new Date();
+
+    const mensualidad = await Mensualidad.findByIdAndUpdate(id, cambios, {
+      returnDocument: 'after',
+      runValidators: true
+    });
+    if (!mensualidad) {
+      res.status(404).json({ mensaje: 'Mensualidad no encontrada' });
+      return;
+    }
+    res.status(200).json(mensualidad);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Eliminar mensualidad
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      res.status(400).json({ mensaje: 'ID con formato inválido' });
+      return;
+    }
+    const eliminada = await Mensualidad.findByIdAndDelete(id);
+    if (!eliminada) {
+      res.status(404).json({ mensaje: 'Mensualidad no encontrada' });
+      return;
+    }
+    res.status(200).json({ mensaje: 'Mensualidad eliminada' });
+  } catch (err) { manejarError(res, err); }
+});
+
 export default router;

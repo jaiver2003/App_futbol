@@ -1,0 +1,213 @@
+:root {
+  --dorado: #f5c518;
+  --dorado-oscuro: #d4a900;
+  --negro: #1a1a1a;
+  --fondo: #f4f5f7;
+  --texto: #2b2b2b;
+  --gris: #6b7280;
+  --borde: #e5e7eb;
+  --verde: #16a34a;
+  --rojo: #dc2626;
+  --sombra: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+h1 { margin: 0 0 10px; font-size: 2.2rem; }
+h2 { margin: 24px 0 16px; font-size: 1.6rem; }
+h3 { margin: 0 0 6px; font-size: 1.2rem; }
+p { margin: 6px 0; }
+
+.container {
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* ---------- Header ---------- */
+header {
+  background: var(--negro);
+  color: #fff;
+  padding: 14px 0;
+  border-bottom: 4px solid var(--dorado);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h2 { margin: 0; font-size: 1.3rem; }
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 0;
+}
+
+header nav { display: flex; gap: 6px; flex-wrap: wrap; }
+
+header nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+
+header nav a:hover,
+header nav a.active {
+  background: var(--dorado);
+  color: var(--negro);
+}
+
+/* ---------- Botones ---------- */
+button,
+.btn {
+  display: inline-block;
+  background: var(--dorado);
+  color: var(--negro);
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: transform 0.1s, background 0.2s;
+}
+
+button:hover, .btn:hover { background: var(--dorado-oscuro); }
+button:active, .btn:active { transform: scale(0.97); }
+
+.btn-primary { background: var(--dorado); color: var(--negro); }
+.btn-secondary { background: #e5e7eb; color: var(--texto); }
+.btn-secondary:hover { background: #d1d5db; }
+.btn-danger { background: var(--rojo); color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+
+/* ---------- Inputs ---------- */
+input, textarea, select {
+  padding: 10px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--dorado);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.25);
+}
+
+label { font-weight: 600; font-size: 0.9rem; }
+
+.search {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+/* ---------- Tarjetas de jugador ---------- */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: var(--sombra);
+  border-top: 4px solid var(--dorado);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.camiseta {
+  background: var(--negro);
+  color: var(--dorado);
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.card-info { color: var(--gris); margin: 4px 0; }
+
+.card-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.badge-activo { background: #dcfce7; color: var(--verde); }
+.badge-inactivo { background: #fee2e2; color: var(--rojo); }
+
+/* ---------- Inicio ---------- */
+.hero {
+  background: var(--negro);
+  color: #fff;
+  border-radius: 16px;
+  padding: 50px 30px;
+  margin-top: 30px;
+  text-align: center;
+  border-bottom: 6px solid var(--dorado);
+}
+
+.hero p { color: #d1d5db; font-size: 1.1rem; }
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Tablas ---------- */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--borde);
+}
+
+th { background: var(--dorado); color: var(--negro); }
+tbody tr:hover { background: #fafafa; }

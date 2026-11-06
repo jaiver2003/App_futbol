@@ -1,0 +1,483 @@
+﻿===== Categoria.ts =====
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface ICategoria extends Document {
+  nombre: string;
+  edadMin: number;
+  edadMax: number;
+  horario: string;
+}
+
+const CategoriaSchema = new Schema<ICategoria>({
+  nombre: { type: String, required: [true, 'El nombre es obligatorio'], unique: true, trim: true },
+  edadMin: { type: Number, required: [true, 'La edad mÃ­nima es obligatoria'], min: [4, 'Edad mÃ­nima 4'], max: [60, 'Edad mÃ¡xima 60'] },
+  edadMax: { type: Number, required: [true, 'La edad mÃ¡xima es obligatoria'], min: [4, 'Edad mÃ­nima 4'], max: [60, 'Edad mÃ¡xima 60'] },
+  horario: { type: String, required: [true, 'El horario es obligatorio'], trim: true }
+}, { timestamps: true });
+
+export default mongoose.model<ICategoria>('Categoria', CategoriaSchema);
+
+===== Entrenador.ts =====
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface IEntrenador extends Document {
+  nombre: string;
+  apellido: string;
+  telefono: string;
+  especialidad: string;
+  categoriaId?: mongoose.Types.ObjectId;
+  estado: 'activo' | 'inactivo';
+}
+
+const EntrenadorSchema = new Schema<IEntrenador>({
+  nombre: { type: String, required: [true, 'El nombre es obligatorio'], trim: true },
+  apellido: { type: String, required: [true, 'El apellido es obligatorio'], trim: true },
+  telefono: { type: String, required: [true, 'El telÃ©fono es obligatorio'], trim: true },
+  especialidad: { type: String, required: [true, 'La especialidad es obligatoria'], trim: true },
+  categoriaId: { type: Schema.Types.ObjectId, ref: 'Categoria' },
+  estado: { type: String, enum: ['activo', 'inactivo'], default: 'activo' }
+}, { timestamps: true });
+
+export default mongoose.model<IEntrenador>('Entrenador', EntrenadorSchema);
+
+===== Partido.ts =====
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface IPartido extends Document {
+  fecha: Date;
+  rival: string;
+  lugar: string;
+  categoriaId: mongoose.Types.ObjectId;
+  golesFavor?: number;
+  golesContra?: number;
+  estado: 'programado' | 'jugado' | 'cancelado';
+}
+
+const PartidoSchema = new Schema<IPartido>({
+  fecha: { type: Date, required: [true, 'La fecha es obligatoria'] },
+  rival: { type: String, required: [true, 'El rival es obligatorio'], trim: true },
+  lugar: { type: String, required: [true, 'El lugar es obligatorio'], trim: true },
+  categoriaId: { type: Schema.Types.ObjectId, ref: 'Categoria', required: [true, 'categoriaId es obligatorio'] },
+  golesFavor: { type: Number, min: [0, 'Los goles no pueden ser negativos'] },
+  golesContra: { type: Number, min: [0, 'Los goles no pueden ser negativos'] },
+  estado: { type: String, enum: ['programado', 'jugado', 'cancelado'], default: 'programado' }
+}, { timestamps: true });
+
+export default mongoose.model<IPartido>('Partido', PartidoSchema);
+
+===== Asistencia.ts =====
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface IAsistencia extends Document {
+  jugadorId: mongoose.Types.ObjectId;
+  fecha: Date;
+  presente: boolean;
+  observacion?: string;
+}
+
+const AsistenciaSchema = new Schema<IAsistencia>({
+  jugadorId: { type: Schema.Types.ObjectId, ref: 'Jugador', required: [true, 'jugadorId es obligatorio'] },
+  fecha: { type: Date, required: [true, 'La fecha es obligatoria'] },
+  presente: { type: Boolean, required: [true, 'Debes indicar si el jugador asistiÃ³'] },
+  observacion: { type: String, trim: true, maxlength: [200, 'La observaciÃ³n admite mÃ¡ximo 200 caracteres'] }
+}, { timestamps: true });
+
+// Un jugador solo puede tener un registro de asistencia por fecha
+AsistenciaSchema.index({ jugadorId: 1, fecha: 1 }, { unique: true });
+
+export default mongoose.model<IAsistencia>('Asistencia', AsistenciaSchema);
+
+===== categorias.ts =====
+import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
+import Categoria from '../models/Categoria';
+
+const router = Router();
+
+function manejarError(res: Response, err: any) {
+  if (err instanceof mongoose.Error.ValidationError) {
+    const detalles = Object.values(err.errors).map((e: any) => ({ campo: e.path, mensaje: e.message }));
+    return res.status(400).json({ mensaje: 'Datos invÃ¡lidos', errores: detalles });
+  }
+  if (err instanceof mongoose.Error.CastError) {
+    return res.status(400).json({ mensaje: `Valor invÃ¡lido para el campo '${err.path}'` });
+  }
+  if (err?.code === 11000) {
+    return res.status(409).json({ mensaje: 'Ya existe una categorÃ­a con ese nombre' });
+  }
+  console.error(err);
+  return res.status(500).json({ mensaje: 'Error interno del servidor' });
+}
+
+const idInvalido = (id: unknown) => !mongoose.isValidObjectId(id);
+
+const rangoInvalido = (min: any, max: any) =>
+  min !== undefined && max !== undefined && Number(max) < Number(min);
+
+// Registrar categorÃ­a
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    if (rangoInvalido(req.body.edadMin, req.body.edadMax)) {
+      return res.status(400).json({ mensaje: 'La edad mÃ¡xima no puede ser menor que la mÃ­nima' });
+    }
+    const categoria = await Categoria.create(req.body);
+    res.status(201).json(categoria);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Listar categorÃ­as
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const categorias = await Categoria.find().sort({ edadMin: 1 });
+    res.status(200).json(categorias);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Obtener una categorÃ­a
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const categoria = await Categoria.findById(req.params.id);
+    if (!categoria) return res.status(404).json({ mensaje: 'CategorÃ­a no encontrada' });
+    res.status(200).json(categoria);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Actualizar categorÃ­a
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    if (rangoInvalido(req.body.edadMin, req.body.edadMax)) {
+      return res.status(400).json({ mensaje: 'La edad mÃ¡xima no puede ser menor que la mÃ­nima' });
+    }
+    const categoria = await Categoria.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!categoria) return res.status(404).json({ mensaje: 'CategorÃ­a no encontrada' });
+    res.status(200).json(categoria);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Eliminar categorÃ­a
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const categoria = await Categoria.findByIdAndDelete(req.params.id);
+    if (!categoria) return res.status(404).json({ mensaje: 'CategorÃ­a no encontrada' });
+    res.status(200).json({ mensaje: 'CategorÃ­a eliminada' });
+  } catch (err) { manejarError(res, err); }
+});
+
+export default router;
+
+===== entrenadores.ts =====
+import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
+import Entrenador from '../models/Entrenador';
+import Categoria from '../models/Categoria';
+
+const router = Router();
+
+function manejarError(res: Response, err: any) {
+  if (err instanceof mongoose.Error.ValidationError) {
+    const detalles = Object.values(err.errors).map((e: any) => ({ campo: e.path, mensaje: e.message }));
+    return res.status(400).json({ mensaje: 'Datos invÃ¡lidos', errores: detalles });
+  }
+  if (err instanceof mongoose.Error.CastError) {
+    return res.status(400).json({ mensaje: `Valor invÃ¡lido para el campo '${err.path}'` });
+  }
+  console.error(err);
+  return res.status(500).json({ mensaje: 'Error interno del servidor' });
+}
+
+const idInvalido = (id: unknown) => !mongoose.isValidObjectId(id);
+
+// Verifica que la categorÃ­a enviada exista (si se enviÃ³ una)
+async function categoriaValida(categoriaId: any, res: Response): Promise<boolean> {
+  if (categoriaId === undefined || categoriaId === null || categoriaId === '') return true;
+  if (idInvalido(String(categoriaId))) {
+    res.status(400).json({ mensaje: 'categoriaId con formato invÃ¡lido' });
+    return false;
+  }
+  const existe = await Categoria.findById(categoriaId);
+  if (!existe) {
+    res.status(404).json({ mensaje: 'La categorÃ­a no existe' });
+    return false;
+  }
+  return true;
+}
+
+// Registrar entrenador
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    if (!(await categoriaValida(req.body.categoriaId, res))) return;
+    const datos = { ...req.body };
+    if (datos.categoriaId === '') delete datos.categoriaId;
+    const entrenador = await Entrenador.create(datos);
+    res.status(201).json(entrenador);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Listar entrenadores (filtros opcionales ?estado=activo&categoriaId=...)
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const filtro: Record<string, any> = {};
+    if (req.query.estado) filtro.estado = req.query.estado;
+    if (req.query.categoriaId) filtro.categoriaId = req.query.categoriaId;
+    const entrenadores = await Entrenador.find(filtro)
+      .populate('categoriaId', 'nombre horario')
+      .sort({ apellido: 1 });
+    res.status(200).json(entrenadores);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Obtener un entrenador
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const entrenador = await Entrenador.findById(req.params.id).populate('categoriaId', 'nombre horario');
+    if (!entrenador) return res.status(404).json({ mensaje: 'Entrenador no encontrado' });
+    res.status(200).json(entrenador);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Actualizar entrenador
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    if (!(await categoriaValida(req.body.categoriaId, res))) return;
+    const cambios = { ...req.body };
+    if (cambios.categoriaId === '') cambios.categoriaId = null;
+    const entrenador = await Entrenador.findByIdAndUpdate(req.params.id, cambios, { new: true, runValidators: true });
+    if (!entrenador) return res.status(404).json({ mensaje: 'Entrenador no encontrado' });
+    res.status(200).json(entrenador);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Eliminar entrenador
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const entrenador = await Entrenador.findByIdAndDelete(req.params.id);
+    if (!entrenador) return res.status(404).json({ mensaje: 'Entrenador no encontrado' });
+    res.status(200).json({ mensaje: 'Entrenador eliminado' });
+  } catch (err) { manejarError(res, err); }
+});
+
+export default router;
+
+===== partidos.ts =====
+import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
+import Partido from '../models/Partido';
+import Categoria from '../models/Categoria';
+
+const router = Router();
+
+function manejarError(res: Response, err: any) {
+  if (err instanceof mongoose.Error.ValidationError) {
+    const detalles = Object.values(err.errors).map((e: any) => ({ campo: e.path, mensaje: e.message }));
+    return res.status(400).json({ mensaje: 'Datos invÃ¡lidos', errores: detalles });
+  }
+  if (err instanceof mongoose.Error.CastError) {
+    return res.status(400).json({ mensaje: `Valor invÃ¡lido para el campo '${err.path}'` });
+  }
+  console.error(err);
+  return res.status(500).json({ mensaje: 'Error interno del servidor' });
+}
+
+const idInvalido = (id: unknown) => !mongoose.isValidObjectId(id);
+
+// Un partido "jugado" debe traer el marcador completo
+function marcadorFaltante(datos: any): boolean {
+  return datos.estado === 'jugado' &&
+    (datos.golesFavor === undefined || datos.golesFavor === null ||
+     datos.golesContra === undefined || datos.golesContra === null);
+}
+
+// Registrar partido
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const { categoriaId } = req.body;
+    if (!categoriaId || idInvalido(categoriaId)) {
+      return res.status(400).json({ mensaje: 'categoriaId es obligatorio y debe tener formato vÃ¡lido' });
+    }
+    const categoria = await Categoria.findById(categoriaId);
+    if (!categoria) return res.status(404).json({ mensaje: 'La categorÃ­a no existe' });
+    if (marcadorFaltante(req.body)) {
+      return res.status(400).json({ mensaje: 'Un partido jugado debe incluir golesFavor y golesContra' });
+    }
+    const partido = await Partido.create(req.body);
+    res.status(201).json(partido);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Listar partidos (filtros opcionales ?estado=jugado&categoriaId=...)
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const filtro: Record<string, any> = {};
+    if (req.query.estado) filtro.estado = req.query.estado;
+    if (req.query.categoriaId) filtro.categoriaId = req.query.categoriaId;
+    const partidos = await Partido.find(filtro)
+      .populate('categoriaId', 'nombre')
+      .sort({ fecha: -1 });
+    res.status(200).json(partidos);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Obtener un partido
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const partido = await Partido.findById(req.params.id).populate('categoriaId', 'nombre');
+    if (!partido) return res.status(404).json({ mensaje: 'Partido no encontrado' });
+    res.status(200).json(partido);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Actualizar partido (por ejemplo, registrar el resultado)
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    if (req.body.categoriaId !== undefined) {
+      if (idInvalido(req.body.categoriaId)) {
+        return res.status(400).json({ mensaje: 'categoriaId con formato invÃ¡lido' });
+      }
+      const categoria = await Categoria.findById(req.body.categoriaId);
+      if (!categoria) return res.status(404).json({ mensaje: 'La categorÃ­a no existe' });
+    }
+    const actual = await Partido.findById(req.params.id);
+    if (!actual) return res.status(404).json({ mensaje: 'Partido no encontrado' });
+
+    const resultado = { ...actual.toObject(), ...req.body };
+    if (marcadorFaltante(resultado)) {
+      return res.status(400).json({ mensaje: 'Un partido jugado debe incluir golesFavor y golesContra' });
+    }
+    const partido = await Partido.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    res.status(200).json(partido);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Eliminar partido
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const partido = await Partido.findByIdAndDelete(req.params.id);
+    if (!partido) return res.status(404).json({ mensaje: 'Partido no encontrado' });
+    res.status(200).json({ mensaje: 'Partido eliminado' });
+  } catch (err) { manejarError(res, err); }
+});
+
+export default router;
+
+===== asistencias.ts =====
+import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
+import Asistencia from '../models/Asistencia';
+import Jugador from '../models/Jugador';
+
+const router = Router();
+
+function manejarError(res: Response, err: any) {
+  if (err instanceof mongoose.Error.ValidationError) {
+    const detalles = Object.values(err.errors).map((e: any) => ({ campo: e.path, mensaje: e.message }));
+    return res.status(400).json({ mensaje: 'Datos invÃ¡lidos', errores: detalles });
+  }
+  if (err instanceof mongoose.Error.CastError) {
+    return res.status(400).json({ mensaje: `Valor invÃ¡lido para el campo '${err.path}'` });
+  }
+  if (err?.code === 11000) {
+    return res.status(409).json({ mensaje: 'Ya existe un registro de asistencia de ese jugador para esa fecha' });
+  }
+  console.error(err);
+  return res.status(500).json({ mensaje: 'Error interno del servidor' });
+}
+
+const idInvalido = (id: unknown) => !mongoose.isValidObjectId(id);
+
+// Registrar asistencia
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const { jugadorId } = req.body;
+    if (!jugadorId || idInvalido(jugadorId)) {
+      return res.status(400).json({ mensaje: 'jugadorId es obligatorio y debe tener formato vÃ¡lido' });
+    }
+    const jugador = await Jugador.findById(jugadorId);
+    if (!jugador) return res.status(404).json({ mensaje: 'El jugador no existe' });
+    if (jugador.estado === 'inactivo') {
+      return res.status(400).json({ mensaje: 'No se puede registrar asistencia a un jugador inactivo' });
+    }
+    const asistencia = await Asistencia.create(req.body);
+    res.status(201).json(asistencia);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Listar asistencias (filtros opcionales ?fecha=2026-11-10&presente=true)
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const filtro: Record<string, any> = {};
+    if (req.query.fecha) filtro.fecha = new Date(String(req.query.fecha));
+    if (req.query.presente !== undefined) filtro.presente = req.query.presente === 'true';
+    const asistencias = await Asistencia.find(filtro)
+      .populate('jugadorId', 'nombre apellido numeroCamiseta')
+      .sort({ fecha: -1 });
+    res.status(200).json(asistencias);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Historial y porcentaje de asistencia de un jugador
+router.get('/jugador/:jugadorId', async (req: Request, res: Response) => {
+  try {
+    const { jugadorId } = req.params;
+    if (idInvalido(jugadorId)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const jugador = await Jugador.findById(jugadorId);
+    if (!jugador) return res.status(404).json({ mensaje: 'Jugador no encontrado' });
+
+    const historial = await Asistencia.find({ jugadorId }).sort({ fecha: -1 });
+    const presentes = historial.filter((a) => a.presente).length;
+    const porcentaje = historial.length ? Math.round((presentes / historial.length) * 100) : 0;
+
+    res.status(200).json({
+      jugador: `${jugador.nombre} ${jugador.apellido}`,
+      totalRegistros: historial.length,
+      presentes,
+      ausentes: historial.length - presentes,
+      porcentajeAsistencia: porcentaje,
+      historial
+    });
+  } catch (err) { manejarError(res, err); }
+});
+
+// Obtener un registro
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const asistencia = await Asistencia.findById(req.params.id).populate('jugadorId', 'nombre apellido numeroCamiseta');
+    if (!asistencia) return res.status(404).json({ mensaje: 'Registro no encontrado' });
+    res.status(200).json(asistencia);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Actualizar registro (por ejemplo, corregir presente u observaciÃ³n)
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const { presente, observacion, fecha } = req.body;
+    const cambios: Record<string, any> = { presente, observacion, fecha };
+    Object.keys(cambios).forEach((k) => cambios[k] === undefined && delete cambios[k]);
+    const asistencia = await Asistencia.findByIdAndUpdate(req.params.id, cambios, { new: true, runValidators: true });
+    if (!asistencia) return res.status(404).json({ mensaje: 'Registro no encontrado' });
+    res.status(200).json(asistencia);
+  } catch (err) { manejarError(res, err); }
+});
+
+// Eliminar registro
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato invÃ¡lido' });
+    const asistencia = await Asistencia.findByIdAndDelete(req.params.id);
+    if (!asistencia) return res.status(404).json({ mensaje: 'Registro no encontrado' });
+    res.status(200).json({ mensaje: 'Registro eliminado' });
+  } catch (err) { manejarError(res, err); }
+});
+
+export default router;
+

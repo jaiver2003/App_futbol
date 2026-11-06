@@ -4,6 +4,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import jugadoresRouter from './routes/jugadores';
 import mensualidadesRouter from './routes/mensualidades';
+import categoriasRouter from './routes/categorias';
+import entrenadoresRouter from './routes/entrenadores';
+import partidosRouter from './routes/partidos';
+import asistenciasRouter from './routes/asistencias';
 
 dotenv.config();
 
@@ -20,6 +24,10 @@ mongoose.connect(process.env.MONGODB_URI!)
 
 app.use('/api/jugadores', jugadoresRouter);
 app.use('/api/mensualidades', mensualidadesRouter);
+app.use('/api/categorias', categoriasRouter);
+app.use('/api/entrenadores', entrenadoresRouter);
+app.use('/api/partidos', partidosRouter);
+app.use('/api/asistencias', asistenciasRouter);
 
 app.get('/', (req, res) => {
   res.json({ mensaje: '⚽ Club Deportivo Academia Dorada API funcionando' });
