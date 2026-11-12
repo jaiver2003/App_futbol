@@ -7,6 +7,7 @@ import {
   eliminarEntrenador,
 } from '../api/entrenadores'
 import { obtenerCategorias } from '../api/categorias'
+import { mensajeDeError } from '../api/errores'
 import type { Entrenador, Categoria } from '../types'
 
 const formVacio = {
@@ -18,12 +19,6 @@ const formVacio = {
   estado: 'activo' as 'activo' | 'inactivo',
 }
 
-function mensajeError(err: unknown): string {
-  const data = (err as { response?: { data?: { mensaje?: string; errores?: { mensaje: string }[] } } })
-    .response?.data
-  if (data?.errores?.length) return data.errores.map((e) => e.mensaje).join('. ')
-  return data?.mensaje ?? 'Ocurrió un error. Intenta de nuevo.'
-}
 
 function nombreCategoria(e: Entrenador): string {
   if (e.categoriaId && typeof e.categoriaId === 'object') return e.categoriaId.nombre
@@ -48,7 +43,7 @@ export default function Entrenadores() {
       setEntrenadores(ent.data)
       setCategorias(cat.data)
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
@@ -94,7 +89,7 @@ export default function Entrenadores() {
       cancelar()
       cargar()
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
@@ -105,16 +100,16 @@ export default function Entrenadores() {
       if (editandoId === id) cancelar()
       cargar()
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
-  return (
-    <div className="container">
-      <h1>Entrenadores</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    return (
+    <main className="container">
+      <h2>Entrenadores</h2>
+      {error && <p className="error-texto">{error}</p>}
 
-      <form onSubmit={guardar}>
+      <form className="form-inline" onSubmit={guardar}>
         <input placeholder="Nombre" value={form.nombre}
           onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
         <input placeholder="Apellido" value={form.apellido}
@@ -136,18 +131,33 @@ export default function Entrenadores() {
           <option value="inactivo">Inactivo</option>
         </select>
         <button type="submit">{editandoId ? 'Guardar cambios' : 'Crear entrenador'}</button>
-        {editandoId && <button type="button" onClick={cancelar}>Cancelar</button>}
+        {editandoId && <button type="button" className="btn-secondary" onClick={cancelar}>Cancelar</button>}
       </form>
 
-      <ul>
-        {entrenadores.map((e) => (
-          <li key={e._id}>
-            {e.nombre} {e.apellido} · {e.especialidad} · {e.telefono} · {nombreCategoria(e)} · {e.estado}{' '}
-            <button onClick={() => editar(e)}>Editar</button>{' '}
-            <button onClick={() => borrar(e._id)}>Eliminar</button>
-          </li>
-        ))}
-      </ul>
-    </div>
+      {entrenadores.length === 0 ? <p>Aún no hay entrenadores registrados.</p> : (
+        <table>
+          <thead>
+            <tr><th>Nombre</th><th>Especialidad</th><th>Teléfono</th><th>Categoría</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody>
+            {entrenadores.map((e) => (
+              <tr key={e._id}>
+                <td>{e.nombre} {e.apellido}</td>
+                <td>{e.especialidad}</td>
+                <td>{e.telefono}</td>
+                <td>{nombreCategoria(e)}</td>
+                <td>
+                  <span className={`badge ${e.estado === 'activo' ? 'badge-activo' : 'badge-inactivo'}`}>{e.estado}</span>
+                </td>
+                <td>
+                  <button className="btn-secondary" onClick={() => editar(e)}>✏️</button>{' '}
+                  <button className="btn-danger" onClick={() => borrar(e._id)}>🗑️</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </main>
   )
 }

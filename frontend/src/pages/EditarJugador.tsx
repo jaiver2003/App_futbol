@@ -32,7 +32,13 @@ export default function EditarJugador() {
   return (
     <main className="container">
       <h2>Editar Jugador</h2>
-      <JugadorForm initialData={jugador} onSubmit={handleSubmit} />
+      <JugadorForm
+        initialData={{
+          ...jugador,
+          categoriaId: typeof jugador.categoriaId === 'object' ? jugador.categoriaId?._id : jugador.categoriaId ?? undefined,
+        }}
+        onSubmit={handleSubmit}
+      />
     </main>
   )
 }

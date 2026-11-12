@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import type { JugadorInput } from '../types'
+import { obtenerCategorias } from '../api/categorias'
+import type { Categoria, JugadorInput } from '../types'
 import '../styles/forms.css'
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function JugadorForm({ initialData = {}, onSubmit }: Props) {
+  const [categorias, setCategorias] = useState<Categoria[]>([])
   const [formData, setFormData] = useState({
     nombre: initialData.nombre ?? '',
     apellido: initialData.apellido ?? '',
@@ -16,8 +18,13 @@ export default function JugadorForm({ initialData = {}, onSubmit }: Props) {
     posicion: initialData.posicion ?? '',
     numeroCamiseta: initialData.numeroCamiseta !== undefined ? String(initialData.numeroCamiseta) : '',
     telefono: initialData.telefono ?? '',
+    categoriaId: initialData.categoriaId ?? '',
     estado: initialData.estado ?? 'activo',
   })
+
+  useEffect(() => {
+    obtenerCategorias().then((res) => setCategorias(res.data)).catch(console.error)
+  }, [])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -58,6 +65,14 @@ export default function JugadorForm({ initialData = {}, onSubmit }: Props) {
 
       <label>Teléfono (WhatsApp):</label>
       <input name="telefono" value={formData.telefono} onChange={handleChange} required />
+
+      <label>Categoría:</label>
+      <select name="categoriaId" value={formData.categoriaId} onChange={handleChange}>
+        <option value="">Sin categoría</option>
+        {categorias.map((c) => (
+          <option key={c._id} value={c._id}>{c.nombre} ({c.edadMin}-{c.edadMax} años)</option>
+        ))}
+      </select>
 
       <label>Estado:</label>
       <select name="estado" value={formData.estado} onChange={handleChange}>

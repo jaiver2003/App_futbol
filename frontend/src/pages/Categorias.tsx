@@ -6,19 +6,15 @@ import {
   actualizarCategoria,
   eliminarCategoria,
 } from '../api/categorias'
-import type { Categoria } from '../types'
+import { obtenerSedes } from '../api/sedes'
+import { mensajeDeError } from '../api/errores'
+import type { Categoria, Sede } from '../types'
 
-const formVacio = { nombre: '', edadMin: '', edadMax: '', horario: '' }
-
-function mensajeError(err: unknown): string {
-  const data = (err as { response?: { data?: { mensaje?: string; errores?: { mensaje: string }[] } } })
-    .response?.data
-  if (data?.errores?.length) return data.errores.map((e) => e.mensaje).join('. ')
-  return data?.mensaje ?? 'Ocurrió un error. Intenta de nuevo.'
-}
+const formVacio = { nombre: '', edadMin: '', edadMax: '', horario: '', sedeId: '' }
 
 export default function Categorias() {
   const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [sedes, setSedes] = useState<Sede[]>([])
   const [form, setForm] = useState(formVacio)
   const [error, setError] = useState('')
   const [editandoId, setEditandoId] = useState<string | null>(null)
@@ -28,12 +24,15 @@ export default function Categorias() {
       const { data } = await obtenerCategorias()
       setCategorias(data)
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
   useEffect(() => {
     cargar()
+    obtenerSedes()
+      .then((res) => setSedes(res.data.filter((s) => s.estado === 'activa')))
+      .catch(console.error)
   }, [])
 
   const cancelar = () => {
@@ -48,6 +47,7 @@ export default function Categorias() {
       edadMin: String(c.edadMin),
       edadMax: String(c.edadMax),
       horario: c.horario,
+      sedeId: typeof c.sedeId === 'object' && c.sedeId ? c.sedeId._id : (c.sedeId ?? ''),
     })
     setEditandoId(c._id)
     setError('')
@@ -60,6 +60,7 @@ export default function Categorias() {
       edadMin: Number(form.edadMin),
       edadMax: Number(form.edadMax),
       horario: form.horario,
+      sedeId: form.sedeId, // '' = sin sede
     }
     try {
       if (editandoId) {
@@ -70,7 +71,7 @@ export default function Categorias() {
       cancelar()
       cargar()
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
@@ -81,16 +82,16 @@ export default function Categorias() {
       if (editandoId === id) cancelar()
       cargar()
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
   return (
-    <div>
-      <h1>Categorías</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <main className="container">
+      <h2>Categorías</h2>
+      {error && <p className="error-texto">{error}</p>}
 
-      <form onSubmit={guardar}>
+      <form className="form-inline" onSubmit={guardar}>
         <input placeholder="Nombre" value={form.nombre}
           onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
         <input type="number" placeholder="Edad mínima" value={form.edadMin}
@@ -99,19 +100,37 @@ export default function Categorias() {
           onChange={(e) => setForm({ ...form, edadMax: e.target.value })} required />
         <input placeholder="Horario (ej. Lunes 4pm)" value={form.horario}
           onChange={(e) => setForm({ ...form, horario: e.target.value })} required />
+        <select value={form.sedeId} onChange={(e) => setForm({ ...form, sedeId: e.target.value })}>
+          <option value="">Sin sede</option>
+          {sedes.map((s) => (
+            <option key={s._id} value={s._id}>{s.nombre} — {s.ciudad}</option>
+          ))}
+        </select>
         <button type="submit">{editandoId ? 'Guardar cambios' : 'Crear categoría'}</button>
-        {editandoId && <button type="button" onClick={cancelar}>Cancelar</button>}
+        {editandoId && <button type="button" className="btn-secondary" onClick={cancelar}>Cancelar</button>}
       </form>
 
-      <ul>
-        {categorias.map((c) => (
-          <li key={c._id}>
-            {c.nombre} · {c.edadMin}-{c.edadMax} años · {c.horario}{' '}
-            <button onClick={() => editar(c)}>Editar</button>{' '}
-            <button onClick={() => borrar(c._id)}>Eliminar</button>
-          </li>
-        ))}
-      </ul>
-    </div>
+      {categorias.length === 0 ? <p>Aún no hay categorías.</p> : (
+        <table>
+          <thead>
+            <tr><th>Nombre</th><th>Edades</th><th>Horario</th><th>Sede</th><th></th></tr>
+          </thead>
+          <tbody>
+            {categorias.map((c) => (
+              <tr key={c._id}>
+                <td>{c.nombre}</td>
+                <td>{c.edadMin}-{c.edadMax} años</td>
+                <td>{c.horario}</td>
+                <td>{typeof c.sedeId === 'object' && c.sedeId ? c.sedeId.nombre : '—'}</td>
+                <td>
+                  <button className="btn-secondary" onClick={() => editar(c)}>✏️</button>{' '}
+                  <button className="btn-danger" onClick={() => borrar(c._id)}>🗑️</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </main>
   )
 }

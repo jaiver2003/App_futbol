@@ -8,6 +8,12 @@ import categoriasRouter from './routes/categorias';
 import entrenadoresRouter from './routes/entrenadores';
 import partidosRouter from './routes/partidos';
 import asistenciasRouter from './routes/asistencias';
+import sedesRouter from './routes/sedes';
+import clasesRouter from './routes/clases';
+import authRouter from './routes/auth';
+import usuariosRouter from './routes/usuarios';
+import { verificarToken, acceso } from './middleware/auth';
+import estadisticasRouter from './routes/estadisticas';
 
 dotenv.config();
 
@@ -18,16 +24,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
 mongoose.connect(process.env.MONGODB_URI!)
   .then(() => console.log('✅ Conectado a Academia Dorada - MongoDB'))
   .catch(err => console.error('Error:', err));
 
-app.use('/api/jugadores', jugadoresRouter);
-app.use('/api/mensualidades', mensualidadesRouter);
-app.use('/api/categorias', categoriasRouter);
-app.use('/api/entrenadores', entrenadoresRouter);
-app.use('/api/partidos', partidosRouter);
-app.use('/api/asistencias', asistenciasRouter);
+// Ruta pública (login)
+app.use('/api/auth', authRouter);
+
+// Desde aquí, todo exige haber iniciado sesión
+app.use('/api', verificarToken);
+
+// acceso(quién puede consultar, quién puede crear/editar/borrar). El administrador siempre puede.
+app.use('/api/usuarios', acceso([]), usuariosRouter);
+app.use('/api/entrenadores', acceso([]), entrenadoresRouter);
+app.use('/api/jugadores', acceso(['tesorero', 'entrenador']), jugadoresRouter);
+app.use('/api/categorias', acceso(['tesorero', 'entrenador']), categoriasRouter);
+app.use('/api/sedes', acceso(['tesorero', 'entrenador']), sedesRouter);
+app.use('/api/clases', acceso(['tesorero', 'entrenador']), clasesRouter);
+app.use('/api/partidos', acceso(['tesorero', 'entrenador'], ['entrenador']), partidosRouter);
+app.use('/api/asistencias', acceso(['entrenador'], ['entrenador']), asistenciasRouter);
+app.use('/api/mensualidades', acceso(['tesorero'], ['tesorero']), mensualidadesRouter);
+app.use('/api/estadisticas', acceso(['tesorero', 'entrenador'], ['entrenador']), estadisticasRouter);
 
 app.get('/', (req, res) => {
   res.json({ mensaje: '⚽ Club Deportivo Academia Dorada API funcionando' });
