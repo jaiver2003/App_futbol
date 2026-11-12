@@ -8,12 +8,18 @@ import {
 } from '../api/mensualidades'
 import { obtenerJugadores } from '../api/jugadores'
 import { mensajeDeError } from '../api/errores'
-import type { Jugador, Mensualidad, MensualidadInput } from '../types'
+import type { Jugador, Mensualidad, MensualidadInput, MetodoPago } from '../types'
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const VALOR_MAXIMO = 70000
 
-const pagoVacio: MensualidadInput = { jugadorId: '', mes: 'Enero', anio: 2026, valor: 30000, estado: 'pagado' }
+const METODOS: { valor: MetodoPago; etiqueta: string }[] = [
+  { valor: 'nequi', etiqueta: 'Nequi' },
+  { valor: 'bancolombia', etiqueta: 'Bancolombia' },
+  { valor: 'bre-b', etiqueta: 'Bre-B' },
+]
+
+const pagoVacio: MensualidadInput = { jugadorId: '', mes: 'Enero', anio: 2026, valor: 30000, estado: 'pagado', metodoPago: 'nequi' }
 
 const diasDesde = (fecha: string) =>
   Math.floor((Date.now() - new Date(fecha).getTime()) / (1000 * 60 * 60 * 24))
@@ -67,6 +73,7 @@ export default function Mensualidades() {
       anio: m.anio,
       valor: m.valor,
       estado: m.estado,
+      metodoPago: m.metodoPago ?? 'nequi',
     })
     setEditandoId(m._id)
     setErrorValor('')
@@ -96,6 +103,7 @@ export default function Mensualidades() {
           anio: formPago.anio,
           valor: formPago.valor,
           estado: formPago.estado,
+          metodoPago: formPago.metodoPago,
         })
       } else {
         await crearMensualidad(formPago)
@@ -195,6 +203,15 @@ export default function Mensualidades() {
             <option value="parcial">Parcial</option>
           </select>
 
+          {formPago.estado === 'pagado' && (
+            <>
+              <label>Método de pago:</label>
+              <select name="metodoPago" value={formPago.metodoPago} onChange={handleChange} required>
+                {METODOS.map((o) => <option key={o.valor} value={o.valor}>{o.etiqueta}</option>)}
+              </select>
+            </>
+          )}
+
           <button type="submit">{editandoId ? 'Guardar cambios' : 'Guardar pago'}</button>
         </form>
       )}
@@ -203,12 +220,12 @@ export default function Mensualidades() {
         <thead>
           <tr>
             <th>Jugador</th><th>Mes</th><th>Año</th><th>Valor</th>
-            <th>Estado</th><th>Días pendiente</th><th>Acción</th>
+            <th>Estado</th><th>Método</th><th>Días pendiente</th><th>Acción</th>
           </tr>
         </thead>
         <tbody>
           {mensualidades.length === 0 ? (
-            <tr><td colSpan={7}>No hay pagos registrados aún.</td></tr>
+            <tr><td colSpan={8}>No hay pagos registrados aún.</td></tr>
           ) : (
             mensualidades.map((m) => {
               const dias = m.createdAt ? diasDesde(m.createdAt) : 0
@@ -220,6 +237,7 @@ export default function Mensualidades() {
                   <td>{m.anio}</td>
                   <td>${m.valor.toLocaleString()}</td>
                   <td>{m.estado}</td>
+                  <td>{m.estado === 'pagado' ? (METODOS.find((o) => o.valor === m.metodoPago)?.etiqueta ?? '—') : '—'}</td>
                   <td>{m.estado !== 'pagado' ? `${vencida ? '🔴 ' : ''}${dias} días` : '✅ Al día'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

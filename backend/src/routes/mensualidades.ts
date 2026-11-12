@@ -58,7 +58,7 @@ router.get('/', async (req: Request, res: Response) => {
 // 7. Registrar mensualidad
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { jugadorId, mes, anio, valor, estado, fechaPago } = req.body;
+    const { jugadorId, mes, anio, valor, estado, fechaPago, metodoPago } = req.body;
     if (!mongoose.isValidObjectId(jugadorId)) {
       res.status(400).json({ mensaje: 'jugadorId con formato inválido' });
       return;
@@ -73,7 +73,10 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
     const datos: any = { jugadorId, mes: normalizarMes(mes), anio, valor, estado };
-    if (estado === 'pagado') datos.fechaPago = fechaPago || new Date();
+    if (estado === 'pagado') {
+      datos.fechaPago = fechaPago || new Date();
+      datos.metodoPago = metodoPago;
+    }
     const mensualidad = await Mensualidad.create(datos);
     res.status(201).json(mensualidad);
   } catch (err) { manejarError(res, err); }
@@ -144,13 +147,16 @@ router.put('/:id', async (req: Request, res: Response) => {
       res.status(400).json({ mensaje: 'ID con formato inválido' });
       return;
     }
-    const { mes, anio, valor, estado, fechaPago } = req.body;
+    const { mes, anio, valor, estado, fechaPago, metodoPago } = req.body;
     const cambios: any = {};
     if (mes !== undefined) cambios.mes = normalizarMes(mes);
     if (anio !== undefined) cambios.anio = anio;
     if (valor !== undefined) cambios.valor = valor;
     if (estado !== undefined) cambios.estado = estado;
-    if (estado === 'pagado') cambios.fechaPago = fechaPago || new Date();
+    if (estado === 'pagado') {
+      cambios.fechaPago = fechaPago || new Date();
+      if (metodoPago !== undefined) cambios.metodoPago = metodoPago;
+    }
 
     const mensualidad = await Mensualidad.findByIdAndUpdate(id, cambios, {
       returnDocument: 'after',

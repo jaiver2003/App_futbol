@@ -12,6 +12,7 @@ export interface Jugador {
 
 // Datos que se envían al crear o editar (sin _id)
 export type JugadorInput = Omit<Jugador, '_id' | 'categoriaId'> & { categoriaId?: string }
+export type MetodoPago = 'nequi' | 'bancolombia' | 'bre-b'
 export interface Mensualidad {
   _id: string
   jugadorId: Jugador // el backend lo devuelve poblado (populate)
@@ -19,6 +20,7 @@ export interface Mensualidad {
   anio: number
   valor: number
   estado: 'pagado' | 'pendiente' | 'parcial'
+  metodoPago?: MetodoPago
   fechaPago?: string
   createdAt?: string
 }
@@ -29,6 +31,7 @@ export interface MensualidadInput {
   anio: number
   valor: number
   estado: 'pagado' | 'pendiente' | 'parcial'
+  metodoPago?: MetodoPago
   fechaPago?: string
 }
 
