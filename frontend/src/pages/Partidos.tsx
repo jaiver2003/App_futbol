@@ -7,6 +7,7 @@ import {
   eliminarPartido,
 } from '../api/partidos'
 import { obtenerCategorias } from '../api/categorias'
+import { mensajeDeError } from '../api/errores'
 import type { Partido, Categoria } from '../types'
 
 type EstadoPartido = 'programado' | 'jugado' | 'cancelado'
@@ -19,13 +20,6 @@ const formVacio = {
   estado: 'programado' as EstadoPartido,
   golesFavor: '',
   golesContra: '',
-}
-
-function mensajeError(err: unknown): string {
-  const data = (err as { response?: { data?: { mensaje?: string; errores?: { mensaje: string }[] } } })
-    .response?.data
-  if (data?.errores?.length) return data.errores.map((e) => e.mensaje).join('. ')
-  return data?.mensaje ?? 'Ocurrió un error. Intenta de nuevo.'
 }
 
 function nombreCategoria(p: Partido): string {
@@ -51,7 +45,7 @@ export default function Partidos() {
       setPartidos(par.data)
       setCategorias(cat.data)
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
@@ -100,7 +94,7 @@ export default function Partidos() {
       cancelar()
       cargar()
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
@@ -111,16 +105,19 @@ export default function Partidos() {
       if (editandoId === id) cancelar()
       cargar()
     } catch (err) {
-      setError(mensajeError(err))
+      setError(mensajeDeError(err))
     }
   }
 
-  return (
-    <div className="container">
-      <h1>Partidos</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+   const claseEstado = (estado: Partido['estado']) =>
+    estado === 'jugado' ? 'badge-activo' : estado === 'cancelado' ? 'badge-inactivo' : 'badge-pendiente'
 
-      <form onSubmit={guardar}>
+  return (
+    <main className="container">
+      <h2>Partidos</h2>
+      {error && <p className="error-texto">{error}</p>}
+
+      <form className="form-inline" onSubmit={guardar}>
         <input type="date" value={form.fecha}
           onChange={(e) => setForm({ ...form, fecha: e.target.value })} required />
         <input placeholder="Rival" value={form.rival}
@@ -149,19 +146,32 @@ export default function Partidos() {
           </>
         )}
         <button type="submit">{editandoId ? 'Guardar cambios' : 'Crear partido'}</button>
-        {editandoId && <button type="button" onClick={cancelar}>Cancelar</button>}
+        {editandoId && <button type="button" className="btn-secondary" onClick={cancelar}>Cancelar</button>}
       </form>
 
-      <ul>
-        {partidos.map((p) => (
-          <li key={p._id}>
-            {p.fecha.slice(0, 10)} · vs {p.rival} · {p.lugar} · {nombreCategoria(p)} · {p.estado}
-            {p.estado === 'jugado' && ` · ${p.golesFavor} - ${p.golesContra}`}{' '}
-            <button onClick={() => editar(p)}>Editar</button>{' '}
-            <button onClick={() => borrar(p._id)}>Eliminar</button>
-          </li>
-        ))}
-      </ul>
-    </div>
+      {partidos.length === 0 ? <p>Aún no hay partidos registrados.</p> : (
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Rival</th><th>Lugar</th><th>Categoría</th><th>Estado</th><th>Resultado</th><th></th></tr>
+          </thead>
+          <tbody>
+            {partidos.map((p) => (
+              <tr key={p._id}>
+                <td>{p.fecha.slice(0, 10)}</td>
+                <td>{p.rival}</td>
+                <td>{p.lugar}</td>
+                <td>{nombreCategoria(p)}</td>
+                <td><span className={`badge ${claseEstado(p.estado)}`}>{p.estado}</span></td>
+                <td>{p.estado === 'jugado' ? `${p.golesFavor} - ${p.golesContra}` : '—'}</td>
+                <td>
+                  <button className="btn-secondary" onClick={() => editar(p)}>✏️</button>{' '}
+                  <button className="btn-danger" onClick={() => borrar(p._id)}>🗑️</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </main>
   )
 }

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Categoria from '../models/Categoria';
+import Sede from '../models/Sede';
 
 const router = Router();
 
@@ -30,7 +31,13 @@ router.post('/', async (req: Request, res: Response) => {
     if (rangoInvalido(req.body.edadMin, req.body.edadMax)) {
       return res.status(400).json({ mensaje: 'La edad máxima no puede ser menor que la mínima' });
     }
-    const categoria = await Categoria.create(req.body);
+    const datos = { ...req.body };
+    if (datos.sedeId === '' || datos.sedeId === null) delete datos.sedeId;
+    if (datos.sedeId !== undefined) {
+      if (idInvalido(datos.sedeId)) return res.status(400).json({ mensaje: 'sedeId con formato inválido' });
+      if (!(await Sede.findById(datos.sedeId))) return res.status(404).json({ mensaje: 'La sede no existe' });
+    }
+    const categoria = await Categoria.create(datos);
     res.status(201).json(categoria);
   } catch (err) { manejarError(res, err); }
 });
@@ -38,7 +45,7 @@ router.post('/', async (req: Request, res: Response) => {
 // Listar categorías
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const categorias = await Categoria.find().sort({ edadMin: 1 });
+    const categorias = await Categoria.find().populate('sedeId', 'nombre').sort({ edadMin: 1 });
     res.status(200).json(categorias);
   } catch (err) { manejarError(res, err); }
 });
@@ -47,7 +54,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     if (idInvalido(req.params.id)) return res.status(400).json({ mensaje: 'ID con formato inválido' });
-    const categoria = await Categoria.findById(req.params.id);
+    const categoria = await Categoria.findById(req.params.id).populate('sedeId', 'nombre');
     if (!categoria) return res.status(404).json({ mensaje: 'Categoría no encontrada' });
     res.status(200).json(categoria);
   } catch (err) { manejarError(res, err); }
@@ -60,7 +67,16 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (rangoInvalido(req.body.edadMin, req.body.edadMax)) {
       return res.status(400).json({ mensaje: 'La edad máxima no puede ser menor que la mínima' });
     }
-    const categoria = await Categoria.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { sedeId, ...resto } = req.body;
+    const operacion: Record<string, any> = { $set: resto };
+    if (sedeId === '' || sedeId === null) {
+      operacion.$unset = { sedeId: 1 };            // quitar la sede
+    } else if (sedeId !== undefined) {
+      if (idInvalido(sedeId)) return res.status(400).json({ mensaje: 'sedeId con formato inválido' });
+      if (!(await Sede.findById(sedeId))) return res.status(404).json({ mensaje: 'La sede no existe' });
+      operacion.$set.sedeId = sedeId;
+    }
+    const categoria = await Categoria.findByIdAndUpdate(req.params.id, operacion, { new: true, runValidators: true });
     if (!categoria) return res.status(404).json({ mensaje: 'Categoría no encontrada' });
     res.status(200).json(categoria);
   } catch (err) { manejarError(res, err); }

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { Jugador } from '../types'
 
 interface Props {
@@ -17,10 +18,14 @@ export default function JugadorCard({ jugador, onDelete, onEdit }: Props) {
       </div>
       <h3>{jugador.nombre} {jugador.apellido}</h3>
       <p className="card-info">{jugador.posicion} · {jugador.edad} años</p>
+      {typeof jugador.categoriaId === 'object' && jugador.categoriaId && (
+        <p className="card-info">🏷️ {jugador.categoriaId.nombre}</p>
+      )}
       <p className="card-info">📞 {jugador.telefono}</p>
       <div className="card-actions">
-        <button className="btn-secondary" onClick={() => onEdit(jugador._id)}>✏️ Editar</button>
-        <button className="btn-danger" onClick={() => onDelete(jugador._id)}>🗑️ Eliminar</button>
+        <Link to={`/perfil/${jugador._id}`} className="btn btn-primary">👤 Perfil</Link>
+        <button className="btn-secondary" onClick={() => onEdit(jugador._id)}>✏️</button>
+        <button className="btn-danger" onClick={() => onDelete(jugador._id)}>🗑️</button>
       </div>
     </div>
   )

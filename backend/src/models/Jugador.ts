@@ -7,6 +7,7 @@ export interface IJugador extends Document {
   posicion: 'Portero' | 'Defensa' | 'Mediocampista' | 'Delantero';
   numeroCamiseta: number;
   telefono: string;
+  categoriaId?: mongoose.Types.ObjectId;
   estado: 'activo' | 'inactivo';
 }
 
@@ -24,6 +25,7 @@ const JugadorSchema = new Schema<IJugador>({
     unique: true, min: [1, 'Camiseta mínima 1'], max: [99, 'Camiseta máxima 99']
   },
   telefono: { type: String, required: [true, 'El teléfono es obligatorio'], trim: true },
+  categoriaId: { type: Schema.Types.ObjectId, ref: 'Categoria' },
   estado:   { type: String, enum: ['activo', 'inactivo'], default: 'activo' }
 }, { timestamps: true });
 
